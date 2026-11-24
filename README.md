@@ -1,48 +1,141 @@
-# Moodle
+# Course Analytics & Student Activity Dashboard
 
-<p align="center"><a href="https://moodle.org" target="_blank" title="Moodle Website">
-  <img src="https://raw.githubusercontent.com/moodle/moodle/main/.github/moodlelogo.svg" alt="The Moodle Logo">
-</a></p>
+A custom Moodle reporting plugin that helps administrators and educators understand course performance, monitor student activity, and identify students who may need additional support.
 
-[Moodle][1] is the World's Open Source Learning Platform, widely used around the world by countless universities, schools, companies, and all manner of organisations and individuals.
+## Overview
 
-Moodle is designed to allow educators, administrators and learners to create personalised learning environments with a single robust, secure and integrated system.
+The Course Analytics & Student Activity Dashboard extends Moodle's reporting capabilities with two reporting features:
 
-## Documentation
+1. **Course Analytics Report** – Provides an overview of course enrolments, completion status, and course activity.
+2. **Student Activity Dashboard** – Provides student-level activity insights, summary statistics, and individual course details.
 
-- Read our [User documentation][3]
-- Discover our [developer documentation][5]
-- Take a look at our [demo site][4]
+The plugin brings relevant course and student information together to make academic monitoring easier.
 
-## Community
+## Features
 
-[moodle.org][1] is the central hub for the Moodle Community, with spaces for educators, administrators and developers to meet and work together.
+### 1. Course Analytics Report
 
-You may also be interested in:
+Provides a consolidated view of course information and student progress.
 
-- attending a [Moodle Moot][6]
-- our regular series of [developer meetings][7]
-- the [Moodle User Association][8]
+- Course information and category details.
+- Enrolled student statistics.
+- Course completion information.
+- Assignment and quiz activity insights.
+- Filter courses by category.
+- Filter by completion status.
+- Filter by last-access activity.
+- Search courses by name.
+- Sort report columns.
+- Paginated report results.
 
-## Installation and hosting
+### 2. Student Activity Dashboard
 
-Moodle is Free, and Open Source software. You can easily [download Moodle][9] and run it on your own web server, however you may prefer to work with one of our experienced [Moodle Partners][10].
+Provides a summary of student activity and academic progress.
 
-Moodle also offers hosting through both [MoodleCloud][11], and our [partner network][10].
+- Total enrolled courses.
+- Completed courses.
+- Pending assignments.
+- Actionable quizzes.
+- Login activity information.
+- Average course completion percentage.
+- Individual course details.
+
+### 3. Course Detail View
+
+Allows users to explore individual course information.
+
+- Course-level student progress.
+- Completion percentage.
+- Assignment and quiz activity.
+- Identification of courses with low completion rates.
+- Warnings for courses with less than 50% completion.
+
+## Technical Implementation
+
+The plugin is developed using Moodle's reporting architecture and PHP.
+
+| Component | Technology |
+|---|---|
+| Platform | Moodle |
+| Backend | PHP |
+| Database | Moodle Database API |
+| Frontend | Moodle rendering and reporting interfaces |
+| Reporting | Moodle Flexible Table API |
+| Testing | PHPUnit |
+| Coding Standards | Moodle Coding Style / PHPCS |
+
+### Main Components
+
+```text
+courseanalytics/
+├── classes/
+│   ├── analytics_helper.php
+│   ├── student_dashboard_helper.php
+│   └── table_courseanalytics.php
+├── coursedetail.php
+├── db/
+│   └── access.php
+├── lang/
+│   └── en/
+│       └── report_courseanalytics.php
+├── tests/
+│   ├── analytics_test.php
+│   └── student_dashboard_test.php
+├── index.php
+├── settings.php
+├── student.php
+├── version.php
+└── README.md
+```
+
+## Installation
+
+1. Ensure you have a working Moodle installation.
+2. Navigate to your Moodle installation's `public/report/` directory.
+3. Place the `courseanalytics` plugin directory inside it.
+4. Log in as a Moodle administrator.
+5. Open **Site administration → Notifications**.
+6. Follow the plugin installation or upgrade process.
+7. Configure the appropriate reporting permissions.
+
+## Accessing the Reports
+
+After installation, access the reporting pages using the appropriate Moodle navigation and permissions.
+
+The plugin provides:
+
+- Course Analytics Report.
+- Student Activity Dashboard.
+- Individual Course Detail View.
+
+Access depends on the capabilities configured for the respective Moodle roles.
+
+## Testing and Validation
+
+The plugin includes automated PHPUnit tests covering its reporting and student dashboard functionality.
+
+| Test File | Tests | Assertions |
+|---|---:|---:|
+| analytics_test.php | 2 | 11 |
+| student_dashboard_test.php | 8 | 42 |
+| **Total** | **10** | **53** |
+
+All 10 tests passed in the reported validation run.
+
+PHP syntax validation was also completed for all 12 plugin PHP files.
+
+## Project Structure
+
+This is a custom Moodle report plugin developed as part of an internship assignment. It extends Moodle's existing reporting functionality without requiring modifications to Moodle core files.
 
 ## License
 
-Moodle is provided freely as open source software, under version 3 of the GNU General Public License. See our [license page][12] for more information.
+Moodle is open-source software distributed under the GNU General Public License version 3 (GPL-3.0).
 
-[1]: https://moodle.org
-[2]: https://moodle.com
-[3]: https://docs.moodle.org/
-[4]: https://sandbox.moodledemo.net/
-[5]: https://moodledev.io
-[6]: https://moodle.com/events/mootglobal/
-[7]: https://moodledev.io/general/community/meetings
-[8]: https://moodleassociation.org/
-[9]: https://download.moodle.org
-[10]: https://moodle.com/partners
-[11]: https://moodle.com/cloud
-[12]: https://moodledev.io/general/license
+This plugin is developed for use within a Moodle installation and should follow the applicable Moodle licensing and development guidelines.
+
+For more information:
+
+- [Moodle](https://moodle.org/)
+- [Moodle Developer Documentation](https://moodledev.io/)
+- [Moodle User Documentation](https://docs.moodle.org/)
