@@ -1,141 +1,211 @@
-# Course Analytics & Student Activity Dashboard
+# Course Analytics Report & Student Activity Dashboard
 
-A custom Moodle reporting plugin that helps administrators and educators understand course performance, monitor student activity, and identify students who may need additional support.
+A custom Moodle reporting plugin (`report_courseanalytics`) developed for Moodle 6.0dev that centralizes course-level performance analytics for educators and administrators, and delivers a personalized learning dashboard with proactive completion warnings for students.
 
-## Overview
+---
 
-The Course Analytics & Student Activity Dashboard extends Moodle's reporting capabilities with two reporting features:
+## 1. Project Overview & Repository Information
 
-1. **Course Analytics Report** – Provides an overview of course enrolments, completion status, and course activity.
-2. **Student Activity Dashboard** – Provides student-level activity insights, summary statistics, and individual course details.
+- **Repository:** [https://github.com/Abishek07-tech/moodle.git](https://github.com/Abishek07-tech/moodle.git)
+- **Branch:** `internship/course-analytics-dashboard`
+- **Platform:** Moodle 6.0dev (Build: 20261124)
+- **Plugin Type:** Local Report Plugin (`public/report/courseanalytics/`)
+- **PHP Version:** 8.5.13
+- **Database:** MariaDB 11.8.8
 
-The plugin brings relevant course and student information together to make academic monitoring easier.
+---
 
-## Features
+## 2. Details of Implemented Work
 
-### 1. Course Analytics Report
+### A. Modification: Course Analytics Report (Phase 4)
+*Target Users: Administrators, Managers, and Editing Teachers*
+*Access Path: Site administration → Reports → Course Analytics (`/report/courseanalytics/index.php`)*
 
-Provides a consolidated view of course information and student progress.
+- **Multi-Table SQL Aggregation:** Aggregates real-time metrics across core Moodle tables without modifying core files.
+- **Report Columns:**
+  - Course Name (linked directly to course)
+  - Category Name
+  - Total Enrolled Students (active, non-suspended enrolments)
+  - Assignments Count
+  - Quizzes Count
+  - Completed Activities Count
+  - Last Access Timestamp (formatted via `userdate()`)
+  - Overall Completion % (rendered with Bootstrap color-coded progress bars)
+- **Search:** Case-insensitive search on Course Fullname and Shortname via `$DB->sql_like()`.
+- **Sorting & Pagination:** Built on Moodle's `table_sql` supporting multi-column sorting and server-side pagination with configurable page limits.
+- **Multi-Criteria Filtering:**
+  - *Category Filter:* Filters by specific course categories.
+  - *Completion Status:* Not Started (0%), In Progress (1–99%), Completed (100%).
+  - *Last Access Activity:* Today, Last 7 Days, Last 30 Days, Never Accessed.
 
-- Course information and category details.
-- Enrolled student statistics.
-- Course completion information.
-- Assignment and quiz activity insights.
-- Filter courses by category.
-- Filter by completion status.
-- Filter by last-access activity.
-- Search courses by name.
-- Sort report columns.
-- Paginated report results.
+### B. New Feature: Student Activity Dashboard & Course Detail (Phase 5)
+*Target Users: Authenticated Students*
+*Access Path: User Menu → Student Activity Dashboard (`/report/courseanalytics/student.php`)*
 
-### 2. Student Activity Dashboard
+- **Top KPI Metric Cards:**
+  - **Enrolled Courses:** Total active courses for the logged-in student.
+  - **Completed Courses:** Courses marked complete in `mdl_course_completions`.
+  - **Pending Assignments:** Assignments with upcoming deadlines not yet submitted by the student.
+  - **Actionable Quizzes:** Currently open quizzes with available attempts remaining.
+  - **Login Metrics:** Lifetime login count and previous login timestamp.
+  - **Average Completion %:** Average completion percentage across all enrolled courses.
+- **Enrolled Course Grid:** Visual course cards showing individual completion progress bars.
+- **Course Detail View (`coursedetail.php`):**
+  - Detailed activity breakdown for assignments and quizzes with direct module links, due dates, submission statuses, and grades.
+  - **Dynamic `< 50%` Low Completion Warning Alert:** Automatically displays a prominent warning alert (`alert-danger`) if the student's completion progress is strictly below 50%, encouraging timely intervention.
 
-Provides a summary of student activity and academic progress.
+---
 
-- Total enrolled courses.
-- Completed courses.
-- Pending assignments.
-- Actionable quizzes.
-- Login activity information.
-- Average course completion percentage.
-- Individual course details.
+## 3. Database Structure & Understanding
 
-### 3. Course Detail View
+The plugin uses Moodle's Data Manipulation Layer (`$DB`) with portable ANSI SQL and `{table}` prefix abstraction.
 
-Allows users to explore individual course information.
-
-- Course-level student progress.
-- Completion percentage.
-- Assignment and quiz activity.
-- Identification of courses with low completion rates.
-- Warnings for courses with less than 50% completion.
-
-## Technical Implementation
-
-The plugin is developed using Moodle's reporting architecture and PHP.
-
-| Component | Technology |
-|---|---|
-| Platform | Moodle |
-| Backend | PHP |
-| Database | Moodle Database API |
-| Frontend | Moodle rendering and reporting interfaces |
-| Reporting | Moodle Flexible Table API |
-| Testing | PHPUnit |
-| Coding Standards | Moodle Coding Style / PHPCS |
-
-### Main Components
-
+### Entity Relationship & Key Tables:
 ```text
-courseanalytics/
-├── classes/
-│   ├── analytics_helper.php
-│   ├── student_dashboard_helper.php
-│   └── table_courseanalytics.php
-├── coursedetail.php
-├── db/
-│   └── access.php
-├── lang/
-│   └── en/
-│       └── report_courseanalytics.php
-├── tests/
-│   ├── analytics_test.php
-│   └── student_dashboard_test.php
-├── index.php
-├── settings.php
-├── student.php
-├── version.php
-└── README.md
+                  +--------------------------+
+                  |  mdl_course_categories   |
+                  +--------------------------+
+                               | (id = category)
+                               v
++------------------+     +-------------------+
+|     mdl_user     |     |    mdl_course     |
++------------------+     +-------------------+
+   |            |          |        |       |
+   | (id)       | (id)     | (id)   | (id)  | (course)
+   |            v          |        |       v
+   |    +---------------+  |        |  +--------------------+
+   |    | mdl_user_last |  |        |  |     mdl_enrol      |
+   |    |    access     |  |        |  +--------------------+
+   |    +---------------+  |        |            | (id)
+   |            ^          |        |            v
+   |            | (courseid)        |  +--------------------+
+   |            +----------+        |  | mdl_user_enrolments|
+   |                                |  +--------------------+
+   | (userid)                       |            | (userid)
+   +--------------------------------+------------+
+   |
+   | (userid)
+   |-----------------------------+-----------------------------+
+   |                             |                             |
+   v                             v                             v
++---------------------+   +---------------------+   +---------------------+
+| mdl_course_modules_ |   |   mdl_assign_       |   |   mdl_quiz_         |
+|     completion      |   |   submission        |   |     attempts        |
++---------------------+   +---------------------+   +---------------------+
+           ^                             ^                             ^
+           | (coursemoduleid)            | (assignment)                | (quiz)
++---------------------+   +---------------------+   +---------------------+
+| mdl_course_modules  |   |     mdl_assign      |   |      mdl_quiz       |
++---------------------+   +---------------------+   +---------------------+
+           | (course)                    | (course)                    | (course)
+           +-----------------------------+-----------------------------+
+                                         |
+                                         v
+                                  (mdl_course.id)
 ```
 
-## Installation
+### Table Roles:
+1. `mdl_course`: Master record of courses. Excludes site frontpage (`c.id != 1`).
+2. `mdl_enrol` & `mdl_user_enrolments`: Two-table normalized enrolment architecture. Links students to active course enrolment instances.
+3. `mdl_user_lastaccess`: Stores individual user course-level access timestamps (`MAX(ula.timeaccess)`).
+4. `mdl_course_modules` & `mdl_course_modules_completion`: Tracks activity completion states (`1` = Complete, `2` = Complete Pass, `3` = Complete Fail).
+5. `mdl_assign` & `mdl_assign_submission`: Identifies pending assignments where status is not `'submitted'` and due date has not passed.
+6. `mdl_quiz` & `mdl_quiz_attempts`: Tracks actionable quizzes based on open time windows and remaining attempts.
 
-1. Ensure you have a working Moodle installation.
-2. Navigate to your Moodle installation's `public/report/` directory.
-3. Place the `courseanalytics` plugin directory inside it.
-4. Log in as a Moodle administrator.
-5. Open **Site administration → Notifications**.
-6. Follow the plugin installation or upgrade process.
-7. Configure the appropriate reporting permissions.
+### Mathematical Formulas:
+- **Course Completion %:**
+  $$\text{Total Possible} = \text{Enrolled Students} \times \text{Tracked Activities}$$
+  $$\text{Completion \%} = \frac{\text{Completed Activities}}{\text{Total Possible}} \times 100$$
+  *(Safely defaults to `0.0%` if enrolled students or tracked activities are zero).*
 
-## Accessing the Reports
+---
 
-After installation, access the reporting pages using the appropriate Moodle navigation and permissions.
+## 4. Project Setup & Local Installation
 
-The plugin provides:
+### Prerequisites
+- PHP 8.2+ (PHP 8.5 tested)
+- MariaDB 10.6+ / 11.8+
+- Composer 2.x
 
-- Course Analytics Report.
-- Student Activity Dashboard.
-- Individual Course Detail View.
+### Installation Steps
+1. Clone the repository and checkout the assignment branch:
+   ```bash
+   git clone https://github.com/Abishek07-tech/moodle.git
+   cd moodle
+   git checkout internship/course-analytics-dashboard
+   ```
+2. Verify plugin placement:
+   Ensure the plugin exists at `public/report/courseanalytics/`.
+3. Configure `config.php`:
+   ```php
+   $CFG->dbtype    = 'mariadb';
+   $CFG->dbhost    = 'localhost';
+   $CFG->dbname    = 'moodle';
+   $CFG->dbuser    = 'moodleuser';
+   $CFG->dbpass    = 'moodle@123';
+   $CFG->prefix    = 'mdl_';
+   $CFG->wwwroot   = 'http://localhost:8000';
+   $CFG->dataroot  = '/home/abishek/Projects/Internship/moodledata';
+   ```
+4. Run Moodle database upgrade (if installing for the first time):
+   ```bash
+   php public/admin/cli/upgrade.php --non-interactive
+   ```
+5. Start the local development web server:
+   ```bash
+   cd public
+   php -S 0.0.0.0:8000
+   ```
+6. Access Moodle at: `http://localhost:8000`
 
-Access depends on the capabilities configured for the respective Moodle roles.
+### Demonstration Credentials
+| Role | Username | Password | Target Page |
+|---|---|---|---|
+| **Administrator** | `admin` | `Admin@12345` | `/report/courseanalytics/index.php` |
+| **Student** | `student01` | `Student@123` | `/report/courseanalytics/student.php` |
 
-## Testing and Validation
+---
 
-The plugin includes automated PHPUnit tests covering its reporting and student dashboard functionality.
+## 5. Challenges Faced & Approaches Taken
 
-| Test File | Tests | Assertions |
-|---|---:|---:|
-| analytics_test.php | 2 | 11 |
-| student_dashboard_test.php | 8 | 42 |
-| **Total** | **10** | **53** |
+### Challenge 1: Accidental Markdown Corruption in Coding Standard Config
+- **Issue:** During project work, documentation markdown text was accidentally appended to `phpcs.xml.dist`, corrupting the XML parser and causing PHPCS code-style scans to fail.
+- **Approach:** Analyzed Git diff history against upstream Moodle core, isolated the syntax corruption, cleanly removed the appended lines, and restored `phpcs.xml.dist` to its valid XML schema without modifying core rules.
 
-All 10 tests passed in the reported validation run.
+### Challenge 2: Zero-Division and Edge-Case Handling in SQL Aggregation
+- **Issue:** Courses with zero enrolled students, zero activities, or activities without completion tracking enabled caused division-by-zero exceptions (`Fatal error: Division by zero`) or misleading `NULL` percentages.
+- **Approach:** Implemented defensive subqueries with `COALESCE` and added explicit boundary guard clauses in `analytics_helper::calculate_completion_percentage()`. If `enrolled <= 0` or `tracked <= 0`, the method immediately returns `0.0%`.
 
-PHP syntax validation was also completed for all 12 plugin PHP files.
+### Challenge 3: Insecure Direct Object Reference (IDOR) & Student Isolation
+- **Issue:** Allowing students to specify a `?userid=X` parameter on `student.php` would enable malicious users to view other students' private assignment statuses and academic progress.
+- **Approach:** Strictly bound the dashboard to the authenticated session user (`$userid = (int)$USER->id`). In `coursedetail.php`, enforced `is_enrolled($coursecontext, $userid, '', true)`, immediately throwing a `moodle_exception('nopermissions')` if a student attempts to view a course in which they are not actively enrolled.
 
-## Project Structure
+### Challenge 4: Headless Terminal Credential Prompts & Dataroot Permissions
+- **Issue:** Fedora's default Git credential helper attempted to spawn a GUI askpass window (`ksshaskpass`) which hung headless terminal sessions during git operations. Additionally, Moodle's session writer threw a 500 error when pointing to a read-only root dataroot.
+- **Approach:** Reconfigured the local environment to use a dedicated writable dataroot directory (`Projects/Internship/moodledata`), bypassed interactive askpass using GitHub Personal Access Tokens (PAT), and configured upstream tracking cleanly.
 
-This is a custom Moodle report plugin developed as part of an internship assignment. It extends Moodle's existing reporting functionality without requiring modifications to Moodle core files.
+---
 
-## License
+## 6. Testing & Quality Assurance
 
-Moodle is open-source software distributed under the GNU General Public License version 3 (GPL-3.0).
+The plugin includes automated PHPUnit test suites covering database aggregation, completion formulas, pending assignment logic, and warning thresholds.
 
-This plugin is developed for use within a Moodle installation and should follow the applicable Moodle licensing and development guidelines.
+```bash
+vendor/bin/phpunit public/report/courseanalytics/tests/
+```
 
-For more information:
+### Test Results
+| Test File | Tests | Assertions | Result |
+|---|---:|---:|:---:|
+| `analytics_test.php` | 2 | 11 | **PASS** |
+| `student_dashboard_test.php` | 8 | 42 | **PASS** |
+| **Total** | **10** | **53** | **100% PASS** |
 
-- [Moodle](https://moodle.org/)
-- [Moodle Developer Documentation](https://moodledev.io/)
-- [Moodle User Documentation](https://docs.moodle.org/)
+- **Security Verification:** Parameterized DML queries prevent SQL injection; `html_writer` and `format_string()` prevent Cross-Site Scripting (XSS).
+- **Standards:** All 12 PHP plugin files pass PHP 8.5 syntax linting with 0 errors.
+- **Core Integrity:** Zero Moodle core files modified; completely modular architecture.
+
+---
+
+## 7. License
+This plugin is distributed under the GNU General Public License version 3 (GPL-3.0) in accordance with Moodle's open-source licensing standards.
